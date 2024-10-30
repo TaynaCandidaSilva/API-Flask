@@ -51,7 +51,27 @@ def get_image(file_name):
 
 
 @app.route("/payments/pix/confirmation", methods=["POST"])
-def confirmation_pix():
+def pix_confirmation():
+    data = request.get_json()
+
+    # validation
+    if "bank_payment_id" not in data and "value" not in data:
+        return jsonify({"message": "Invalid payment data"}), 400
+
+    # Payment
+    payment = Payment.query.filter_by(
+        bank_payment_id=data.get("bank_payment_id")
+    ).first()
+
+    if not payment or payment.paid:
+        return jsonify({"message": "Payment not found"}), 404
+
+    if data.get("value") != payment.value:
+        return jsonify({"message": "Invalid payment data"}), 400
+
+    payment.paid = True
+    db.session.commit()
+
     return jsonify({"message": "The payment has been confirmed"})
 
 
